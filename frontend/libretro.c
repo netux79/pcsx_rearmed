@@ -462,7 +462,8 @@ void retro_set_environment(retro_environment_t cb)
       { "pcsx_rearmed_show_bios_bootlogo", "Show Bios Bootlogo(Breaks some games); disabled|enabled" },
       { "pcsx_rearmed_spu_reverb", "Sound: Reverb; enabled|disabled" },
       { "pcsx_rearmed_spu_interpolation", "Sound: Interpolation; simple|gaussian|cubic|off" },
-      { "pcsx_rearmed_pe2_fix", "Parasite Eve 2/Vandal Hearts 1/2 Fix; disabled|enabled" },
+      { "pcsx_rearmed_psxclock", "PSX CPU Clock (default 57); 57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56" },
+      { "pcsx_rearmed_pe2_fix", "Parasite Eve 2 Fix (set PSX CPU Clock=70); disabled|enabled" },
       { "pcsx_rearmed_inuyasha_fix", "InuYasha Sengoku Battle Fix; disabled|enabled" },
       { NULL, NULL },
    };
@@ -1455,6 +1456,14 @@ static void update_variables(bool in_flight)
          psxCpu->Reset(); // not really a reset..
       }
    }
+   
+   var.value = "NULL";
+   var.key = "pcsx_rearmed_psxclock";
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value)
+   {
+      int psxclock = atoi(var.value);
+      cycle_multiplier = 10000 / psxclock;
+   }
 #endif
 
    var.value = "NULL";
@@ -1718,7 +1727,8 @@ void retro_init(void)
 
 	/* Set how much slower PSX CPU runs * 100 (so that 200 is 2 times)
 	 * we have to do this because cache misses and some IO penalties
-	 * are not emulated. Warning: changing this may break compatibility. */
+	 * are not emulated. Warning: changing this may break compatibility. 
+	 * This is also updated in update_variables() fnt if have dynarec enabled */
 	cycle_multiplier = 175;
 #ifdef HAVE_PRE_ARMV7
 	cycle_multiplier = 200;
