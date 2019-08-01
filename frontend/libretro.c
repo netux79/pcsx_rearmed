@@ -516,7 +516,9 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 	}
    
    // Apply pad config changes.
-   dfinput_activate();
+   // Only if PE2 fix in not active.
+   if (!Config.RCntFix)
+      dfinput_activate();
 }
 
 void retro_get_system_info(struct retro_system_info *info)
