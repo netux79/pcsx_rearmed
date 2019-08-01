@@ -243,18 +243,6 @@ static void do_vibration(unsigned char value)
     }
 }
 
-#if 0
-#include <stdio.h>
-unsigned char PADpoll_(unsigned char value);
-unsigned char PADpoll(unsigned char value) {
-	unsigned char b = CurByte, r = PADpoll_(value);
-	printf("poll[%d] %02x %02x\n", b, value, r);
-	return r;
-}
-#define PADpoll PADpoll_
-#endif
-
-#ifndef HAVE_LIBRETRO
 unsigned char PADpoll_pad(unsigned char value) {
 	if (CurByte == 0) {
 		CurCmd = value;
@@ -291,8 +279,7 @@ unsigned char PADstartPoll_pad(int pad) {
 	return 0xFF;
 }
 
-void pad_init(void)
-{
+void pad_init(void) {
 	int i;
 
 	PAD1_readPort1(&padstate[0].pad);
@@ -303,4 +290,3 @@ void pad_init(void)
 		padstate[i].PadMode = padstate[i].pad.controllerType == PSE_PAD_TYPE_ANALOGPAD;
 	}
 }
-#endif

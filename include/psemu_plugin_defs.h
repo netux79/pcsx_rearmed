@@ -196,12 +196,6 @@ typedef struct
 	// controller type - fill it withe predefined values above
 	unsigned char controllerType;
 
-	//0 : no multitap between psx and pad
-	//1 : multitap between psx and pad on port 1
-	//2 : multitap between psx and pad on port 2
-	int portMultitap;
-	int requestPadIndex;
-
 	// status of buttons - every controller fills this field
 	unsigned short buttonStatus;
 

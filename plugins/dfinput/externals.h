@@ -1,6 +1,9 @@
 
 void dfinput_activate(void);
 
+// Define # of controller ports to use
+#define PORTS 2
+
 /* get gunstate from emu frontend,
  * xn, yn - layer position normalized to 0..1023 */
 #define GUNIN_TRIGGER	(1<<0)

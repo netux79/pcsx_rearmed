@@ -37,8 +37,6 @@
 #include "3ds/3ds_utils.h"
 #endif
 
-#define PORTS_NUMBER 8
-
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -74,15 +72,10 @@ extern char Mcd2Data[MCD_SIZE];
 extern char McdDisable[2];
 
 /* PCSX ReARMed core calls and stuff */
-int in_type[8] =  { PSE_PAD_TYPE_NONE, PSE_PAD_TYPE_NONE,
-                  PSE_PAD_TYPE_NONE, PSE_PAD_TYPE_NONE,
-                  PSE_PAD_TYPE_NONE, PSE_PAD_TYPE_NONE,
-                  PSE_PAD_TYPE_NONE, PSE_PAD_TYPE_NONE };
-int in_analog_left[8][2] = {{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 }};
-int in_analog_right[8][2] = {{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 },{ 127, 127 }};
-unsigned short in_keystate[PORTS_NUMBER];
-int multitap1 = 0;
-int multitap2 = 0;
+int in_type[PORTS] = { PSE_PAD_TYPE_NONE, PSE_PAD_TYPE_NONE};
+int in_analog_left[PORTS][2] = {{ 127, 127 },{ 127, 127 }};
+int in_analog_right[PORTS][2] = {{ 127, 127 },{ 127, 127 }};
+unsigned short in_keystate[PORTS];
 int in_enable_vibration = 1;
 
 /* PSX max resolution is 640x512, but with enhancement it's 1024x512 */
@@ -435,35 +428,41 @@ void out_register_libretro(struct out_driver *drv)
 /* libretro */
 void retro_set_environment(retro_environment_t cb)
 {
+
+   static const struct retro_controller_description psx_port[] = {
+      { "None", RETRO_DEVICE_NONE },
+      { "PS Digital Pad", RETRO_DEVICE_JOYPAD },
+      { "PS DualShock Pad", RETRO_DEVICE_ANALOG },
+      { "PS Mouse", RETRO_DEVICE_MOUSE },
+      { "PS NegCon Gun", RETRO_DEVICE_LIGHTGUN },
+   };
+
+   static const struct retro_controller_info ports[] = {
+      { psx_port, 5 },
+      { psx_port, 5 },
+      { 0 },
+   };
+
    static const struct retro_variable vars[] = {
-      { "pcsx_rearmed_frameskip", "Frameskip; 0|1|2|3" },
-      { "pcsx_rearmed_region", "Region; auto|NTSC|PAL" },
-      { "pcsx_rearmed_pad1type", "Pad 1 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_pad2type", "Pad 2 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_pad3type", "Pad 3 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_pad4type", "Pad 4 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_pad5type", "Pad 5 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_pad6type", "Pad 6 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_pad7type", "Pad 7 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_pad8type", "Pad 8 Type; default|none|standard|analog|negcon" },
-      { "pcsx_rearmed_multitap1", "Multitap 1; auto|disabled|enabled" },
-      { "pcsx_rearmed_multitap2", "Multitap 2; auto|disabled|enabled" },
-      { "pcsx_rearmed_vibration", "Enable Vibration; enabled|disabled" },
-      { "pcsx_rearmed_dithering", "Enable Dithering; enabled|disabled" },
 #ifndef DRC_DISABLE
       { "pcsx_rearmed_drc", "Dynamic recompiler; enabled|disabled" },
+      { "pcsx_rearmed_psxclock", "PSX CPU Clock (default 57); 57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56" },
 #endif
+      { "pcsx_rearmed_use_external_bios", "Use external BIOS; disabled|enabled" },
+      { "pcsx_rearmed_show_bios_bootlogo", "Show BIOS logo (Breaks some games); disabled|enabled" },
+      { "pcsx_rearmed_frameskip", "Frameskip; 0|1|2|3" },
+      { "pcsx_rearmed_region", "Region; auto|NTSC|PAL" },
+      { "pcsx_rearmed_vibration", "Enable Vibration; enabled|disabled" },
+      { "pcsx_rearmed_dithering", "Enable Dithering; enabled|disabled" },
+      { "pcsx_rearmed_duping_enable", "Frame duping; enabled|disabled" },
+      { "pcsx_rearmed_spu_reverb", "Sound: Reverb; enabled|disabled" },
+      { "pcsx_rearmed_spu_interpolation", "Sound: Interpolation; simple|gaussian|cubic|off" },
 #ifdef __ARM_NEON__
       { "pcsx_rearmed_neon_interlace_enable", "Enable interlacing mode(s); disabled|enabled" },
       { "pcsx_rearmed_neon_enhancement_enable", "Enhanced resolution (slow); disabled|enabled" },
       { "pcsx_rearmed_neon_enhancement_no_main", "Enhanced resolution speed hack; disabled|enabled" },
 #endif
-      { "pcsx_rearmed_duping_enable", "Frame duping; enabled|disabled" },
-      { "pcsx_rearmed_show_bios_bootlogo", "Show Bios Bootlogo(Breaks some games); disabled|enabled" },
-      { "pcsx_rearmed_spu_reverb", "Sound: Reverb; enabled|disabled" },
-      { "pcsx_rearmed_spu_interpolation", "Sound: Interpolation; simple|gaussian|cubic|off" },
 #ifndef DRC_DISABLE
-      { "pcsx_rearmed_psxclock", "PSX CPU Clock (default 57); 57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56" },
       { "pcsx_rearmed_pe2_fix", "Parasite Eve 2 Fix (set PSX CPU Clock=70); disabled|enabled" },
       { "pcsx_rearmed_inuyasha_fix", "InuYasha Sengoku Battle Fix; disabled|enabled" },
 #endif
@@ -476,6 +475,7 @@ void retro_set_environment(retro_environment_t cb)
    environ_cb = cb;
 
    cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
+   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 }
 
 void retro_set_video_refresh(retro_video_refresh_t cb) { video_cb = cb; }
@@ -489,77 +489,11 @@ unsigned retro_api_version(void)
 	return RETRO_API_VERSION;
 }
 
-static int controller_port_variable(unsigned port, struct retro_variable *var)
+void retro_set_controller_port_device(unsigned port, unsigned device)
 {
-	if (port >= PORTS_NUMBER)
-		return 0;
+	SysPrintf("port %u  device %u",port,device);
 
-	if (!environ_cb)
-		return 0;
-
-	var->value = NULL;
-	switch (port) {
-	case 0:
-		var->key = "pcsx_rearmed_pad1type";
-		break;
-	case 1:
-		var->key = "pcsx_rearmed_pad2type";
-		break;
-	case 2:
-		var->key = "pcsx_rearmed_pad3type";
-		break;
-	case 3:
-		var->key = "pcsx_rearmed_pad4type";
-		break;
-	case 4:
-		var->key = "pcsx_rearmed_pad5type";
-		break;
-	case 5:
-		var->key = "pcsx_rearmed_pad6type";
-		break;
-	case 6:
-		var->key = "pcsx_rearmed_pad7type";
-		break;
-	case 7:
-		var->key = "pcsx_rearmed_pad8type";
-		break;
-	}
-
-	return environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, var) || var->value;
-}
-
-static void update_controller_port_variable(unsigned port)
-{
-	if (port >= PORTS_NUMBER)
-		return;
-
-	struct retro_variable var;
-
-	if (controller_port_variable(port, &var))
-	{
-		if (strcmp(var.value, "standard") == 0)
-			in_type[port] = PSE_PAD_TYPE_STANDARD;
-		else if (strcmp(var.value, "analog") == 0)
-			in_type[port] = PSE_PAD_TYPE_ANALOGPAD;
-		else if (strcmp(var.value, "negcon") == 0)
-			in_type[port] = PSE_PAD_TYPE_NEGCON;
-		else if (strcmp(var.value, "none") == 0)
-			in_type[port] = PSE_PAD_TYPE_NONE;
-		// else 'default' case, do nothing
-	}
-}
-
-static void update_controller_port_device(unsigned port, unsigned device)
-{
-	if (port >= PORTS_NUMBER)
-		return;
-
-	struct retro_variable var;
-
-	if (!controller_port_variable(port, &var))
-		return;
-
-	if (strcmp(var.value, "default") != 0)
+	if (port >= PORTS) 
 		return;
 
 	switch (device)
@@ -580,69 +514,9 @@ static void update_controller_port_device(unsigned port, unsigned device)
 	default:
 		in_type[port] = PSE_PAD_TYPE_NONE;
 	}
-}
-
-static void update_multitap()
-{
-	struct retro_variable var;
-	int auto_case, port;
-
-	var.value = NULL;
-	var.key = "pcsx_rearmed_multitap1";
-	auto_case = 0;
-	if (environ_cb && (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value))
-	{
-		if (strcmp(var.value, "enabled") == 0)
-			multitap1 = 1;
-		else if (strcmp(var.value, "disabled") == 0)
-			multitap1 = 0;
-		else // 'auto' case
-			auto_case = 1;
-	}
-	else
-		auto_case = 1;
-
-	if (auto_case)
-	{
-		// If a gamepad is plugged after port 2, we need a first multitap.
-		multitap1 = 0;
-		for (port = 2; port < PORTS_NUMBER; port++)
-			multitap1 |= in_type[port] != PSE_PAD_TYPE_NONE;
-	}
-
-	var.value = NULL;
-	var.key = "pcsx_rearmed_multitap2";
-	auto_case = 0;
-	if (environ_cb && (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value))
-	{
-		if (strcmp(var.value, "enabled") == 0)
-			multitap2 = 1;
-		else if (strcmp(var.value, "disabled") == 0)
-			multitap2 = 0;
-		else // 'auto' case
-			auto_case = 1;
-	}
-	else
-		auto_case = 1;
-
-	if (auto_case)
-	{
-		// If a gamepad is plugged after port 4, we need a second multitap.
-		multitap2 = 0;
-		for (port = 4; port < PORTS_NUMBER; port++)
-			multitap2 |= in_type[port] != PSE_PAD_TYPE_NONE;
-	}
-}
-
-void retro_set_controller_port_device(unsigned port, unsigned device)
-{
-	SysPrintf("port %u  device %u",port,device);
-
-	if (port >= PORTS_NUMBER)
-		return;
-
-	update_controller_port_device(port, device);
-	update_multitap();
+   
+   // Apply pad config changes.
+   dfinput_activate();
 }
 
 void retro_get_system_info(struct retro_system_info *info)
@@ -1252,7 +1126,6 @@ bool retro_load_game(const struct retro_game_info *info)
 	}
 
 	plugin_call_rearmed_cbs();
-	dfinput_activate();
 
 	if (CheckCdrom() == -1) {
         log_cb(RETRO_LOG_INFO, "unsupported/invalid CD image: %s\n", info->path);
@@ -1330,7 +1203,6 @@ static const unsigned short retro_psx_map[] = {
 static void update_variables(bool in_flight)
 {
    struct retro_variable var;
-   int i;
 
    var.value = NULL;
    var.key = "pcsx_rearmed_frameskip";
@@ -1349,11 +1221,6 @@ static void update_variables(bool in_flight)
       else if (strcmp(var.value, "PAL") == 0)
          Config.PsxType = 1;
    }
-
-   for (i = 0; i < PORTS_NUMBER; i++)
-      update_controller_port_variable(i);
-
-   update_multitap();
 
    var.value = NULL;
    var.key = "pcsx_rearmed_vibration";
@@ -1466,6 +1333,28 @@ static void update_variables(bool in_flight)
       int psxclock = atoi(var.value);
       cycle_multiplier = 10000 / psxclock;
    }
+
+   var.value = "NULL";
+   var.key = "pcsx_rearmed_pe2_fix";
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value)
+   {
+      if (strcmp(var.value, "disabled") == 0)
+         Config.RCntFix = 0;
+      else if (strcmp(var.value, "enabled") == 0)
+         Config.RCntFix = 1;
+   }
+
+   var.value = "NULL";
+   var.key = "pcsx_rearmed_inuyasha_fix";
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value)
+   {
+      if (strcmp(var.value, "disabled") == 0)
+         Config.VSyncWA = 0;
+      else if (strcmp(var.value, "enabled") == 0)
+         Config.VSyncWA = 1;
+   }   
 #endif
 
    var.value = "NULL";
@@ -1494,28 +1383,6 @@ static void update_variables(bool in_flight)
          spu_config.iUseInterpolation = 0;
    }
 
-   var.value = "NULL";
-   var.key = "pcsx_rearmed_pe2_fix";
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value)
-   {
-      if (strcmp(var.value, "disabled") == 0)
-         Config.RCntFix = 0;
-      else if (strcmp(var.value, "enabled") == 0)
-         Config.RCntFix = 1;
-   }
-
-   var.value = "NULL";
-   var.key = "pcsx_rearmed_inuyasha_fix";
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value)
-   {
-      if (strcmp(var.value, "disabled") == 0)
-         Config.VSyncWA = 0;
-      else if (strcmp(var.value, "enabled") == 0)
-         Config.VSyncWA = 1;
-   }
-
    if (in_flight) {
       // inform core things about possible config changes
       plugin_call_rearmed_cbs();
@@ -1524,8 +1391,6 @@ static void update_variables(bool in_flight)
          GPU_close();
          GPU_open(&gpuDisp, "PCSX", NULL);
       }
-
-      dfinput_activate();
    }
    else{
       //not yet running
@@ -1545,7 +1410,7 @@ static void update_variables(bool in_flight)
 
 void retro_run(void)
 {
-    int i;
+    int i, j;
     //SysReset must be run while core is running,Not in menu (Locks up Retroarch)
     if(rebootemu != 0){
       rebootemu = 0;
@@ -1559,8 +1424,7 @@ void retro_run(void)
 		update_variables(true);
 
 	// reset all keystate, query libretro for keystate
-	int j;
-	for(i = 0; i < PORTS_NUMBER; i++) {
+	for(i = 0; i < PORTS; i++) {
 		in_keystate[i] = 0;
 
 		if (in_type[i] == PSE_PAD_TYPE_NONE)
@@ -1654,6 +1518,8 @@ void retro_init(void)
 	const char *dir;
 	char path[256];
 	int i, ret;
+   struct retro_variable var;
+   bool use_bios = false;
    
    found_bios = false;
 
@@ -1672,7 +1538,9 @@ void retro_init(void)
    psxMapHook = pl_vita_mmap;
    psxUnmapHook = pl_vita_munmap;
 #endif
+
 	ret = emu_core_preinit();
+
 #ifdef _3DS 
    /* emu_core_preinit sets the cpu to dynarec */
    if(!__ctr_svchax)
@@ -1695,33 +1563,44 @@ void retro_init(void)
   
   vout_buf_ptr = vout_buf;
   
-	if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
-	{
-		snprintf(Config.BiosDir, sizeof(Config.BiosDir), "%s", dir);
+   var.value = "NULL";
+   var.key = "pcsx_rearmed_use_external_bios";
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) 
+   {
+		if (!strcmp(var.value, "enabled"))
+			use_bios = true;
+	}
+   
+   if (use_bios)
+   {
+      if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
+      {
+         snprintf(Config.BiosDir, sizeof(Config.BiosDir), "%s", dir);
 
-		for (i = 0; i < sizeof(bios) / sizeof(bios[0]); i++) {
-			snprintf(path, sizeof(path), "%s/%s.bin", dir, bios[i]);
-			found_bios = try_use_bios(path);
-			if (found_bios)
-				break;
-		}
+         for (i = 0; i < sizeof(bios) / sizeof(bios[0]); i++) {
+            snprintf(path, sizeof(path), "%s/%s.bin", dir, bios[i]);
+            found_bios = try_use_bios(path);
+            if (found_bios)
+               break;
+         }
 
-		if (!found_bios)
-			found_bios = find_any_bios(dir, path, sizeof(path));
-	}
-	if (found_bios) {
-		SysPrintf("found BIOS file: %s\n", Config.Bios);
-	}
-	else
-	{
-		SysPrintf("no BIOS files found.\n");
-		struct retro_message msg =
-		{
-			"No PlayStation BIOS file found - add for better compatibility",
-			180
-		};
-		environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, (void*)&msg);
-	}
+         if (!found_bios)
+            found_bios = find_any_bios(dir, path, sizeof(path));
+      }
+      if (found_bios) {
+         SysPrintf("found BIOS file: %s\n", Config.Bios);
+      }
+      else
+      {
+         SysPrintf("no BIOS files found.\n");
+         struct retro_message msg =
+         {
+            "No PlayStation BIOS file found - add for better compatibility",
+            180
+         };
+         environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, (void*)&msg);
+      }
+   }
 
 	environ_cb(RETRO_ENVIRONMENT_GET_CAN_DUPE, &vout_can_dupe);
 	environ_cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &disk_control);

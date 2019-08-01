@@ -26,6 +26,7 @@
 #include "../libpcsxcore/new_dynarec/new_dynarec.h"
 #include "../plugins/cdrcimg/cdrcimg.h"
 #include "../plugins/dfsound/spu_config.h"
+#include "../plugins/dfinput/externals.h"
 #include "arm_features.h"
 #include "revision.h"
 
@@ -41,6 +42,8 @@ static void check_memcards(void);
 #ifndef BOOT_MSG
 #define BOOT_MSG "Booting up..."
 #endif
+
+extern int in_type[PORTS];
 
 // don't include debug.h - it breaks ARM build (R1 redefined)
 void StartDebugger();

@@ -14,6 +14,7 @@
 #include "psemu_plugin_defs.h"
 #include "../libpcsxcore/system.h"
 #include "../plugins/cdrcimg/cdrcimg.h"
+#include "../plugins/dfinput/externals.h"
 
 #ifndef _WIN32
 #define CALLBACK
@@ -21,6 +22,11 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+
+extern int in_type[PORTS];
+extern int in_analog_left[PORTS][2];
+extern int in_analog_right[PORTS][2];
+extern unsigned short in_keystate[PORTS];
 
 static int dummy_func() {
 	return 0;
@@ -50,40 +56,29 @@ extern int  CALLBACK SPUplayCDDAchannel(short *, int);
 
 /* PAD */
 static long PADreadPort1(PadDataS *pad) {
-	int pad_index = pad->requestPadIndex;
-    pad->controllerType = in_type[pad_index];
-    pad->buttonStatus = ~in_keystate[pad_index];
-    if (multitap1 == 1)
-    	pad->portMultitap = 1;
-    else
-    	pad->portMultitap = 0;
+    pad->controllerType = in_type[0];
+    pad->buttonStatus = ~in_keystate[0];
     
-    if (in_type[pad_index] == PSE_PAD_TYPE_ANALOGPAD || in_type[pad_index] == PSE_PAD_TYPE_NEGCON)
+    if (in_type[0] == PSE_PAD_TYPE_ANALOGPAD || in_type[0] == PSE_PAD_TYPE_NEGCON)
     {
-        pad->leftJoyX = in_analog_left[pad_index][0];
-        pad->leftJoyY = in_analog_left[pad_index][1];
-        pad->rightJoyX = in_analog_right[pad_index][0];
-        pad->rightJoyY = in_analog_right[pad_index][1];
+        pad->leftJoyX = in_analog_left[0][0];
+        pad->leftJoyY = in_analog_left[0][1];
+        pad->rightJoyX = in_analog_right[0][0];
+        pad->rightJoyY = in_analog_right[0][1];
     }
     return 0;
 }
 
 static long PADreadPort2(PadDataS *pad) {
-	int pad_index = pad->requestPadIndex;
+    pad->controllerType = in_type[1];
+    pad->buttonStatus = ~in_keystate[1];
     
-    pad->controllerType = in_type[pad_index];
-    pad->buttonStatus = ~in_keystate[pad_index];
-    if (multitap2 == 1)
-    	pad->portMultitap = 2;
-    else
-    	pad->portMultitap = 0;
-    
-    if (in_type[pad_index] == PSE_PAD_TYPE_ANALOGPAD || in_type[pad_index] == PSE_PAD_TYPE_NEGCON)
+    if (in_type[1] == PSE_PAD_TYPE_ANALOGPAD || in_type[1] == PSE_PAD_TYPE_NEGCON)
     {
-        pad->leftJoyX = in_analog_left[pad_index][0];
-        pad->leftJoyY = in_analog_left[pad_index][1];
-        pad->rightJoyX = in_analog_right[pad_index][0];
-        pad->rightJoyY = in_analog_right[pad_index][1];
+        pad->leftJoyX = in_analog_left[1][0];
+        pad->leftJoyY = in_analog_left[1][1];
+        pad->rightJoyX = in_analog_right[1][0];
+        pad->rightJoyY = in_analog_right[1][1];
     }
     return 0;
 }
