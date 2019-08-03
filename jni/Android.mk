@@ -58,9 +58,7 @@ SOURCES_C += $(GPU_DIR)/gpu.c \
 SOURCES_C += $(CDR_DIR)/cdrcimg.c
 
 # dfinput
-SOURCES_C += $(INPUT_DIR)/main.c \
-             $(INPUT_DIR)/pad.c \
-             $(INPUT_DIR)/guncon.c
+SOURCES_C += $(INPUT_DIR)/pad.c
 
 # frontend
 SOURCES_C += $(FRONTEND_DIR)/main.c \

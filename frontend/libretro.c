@@ -62,6 +62,7 @@ static int vout_doffs_old, vout_fb_dirty;
 static bool vout_can_dupe;
 static bool duping_enable;
 static bool found_bios;
+static bool use_old_poll_method;
 
 static int plugins_opened;
 static int is_pal_mode;
@@ -452,6 +453,7 @@ void retro_set_environment(retro_environment_t cb)
       { "pcsx_rearmed_show_bios_bootlogo", "Show BIOS logo (Breaks some games); disabled|enabled" },
       { "pcsx_rearmed_frameskip", "Frameskip; 0|1|2|3" },
       { "pcsx_rearmed_region", "Region; auto|NTSC|PAL" },
+      { "pcsx_rearmed_poll_method", "Controller Poll Method; default|new" },
       { "pcsx_rearmed_vibration", "Enable Vibration; enabled|disabled" },
       { "pcsx_rearmed_dithering", "Enable Dithering; enabled|disabled" },
       { "pcsx_rearmed_duping_enable", "Frame duping; enabled|disabled" },
@@ -498,26 +500,26 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 
 	switch (device)
 	{
-	case RETRO_DEVICE_JOYPAD:
-		in_type[port] = PSE_PAD_TYPE_STANDARD;
-		break;
-	case RETRO_DEVICE_ANALOG:
-		in_type[port] = PSE_PAD_TYPE_ANALOGPAD;
-		break;
-	case RETRO_DEVICE_MOUSE:
-		in_type[port] = PSE_PAD_TYPE_MOUSE;
-		break;
-	case RETRO_DEVICE_LIGHTGUN:
-		in_type[port] = PSE_PAD_TYPE_GUN;
-		break;
-	case RETRO_DEVICE_NONE:
-	default:
-		in_type[port] = PSE_PAD_TYPE_NONE;
+      case RETRO_DEVICE_JOYPAD:
+         in_type[port] = PSE_PAD_TYPE_STANDARD;
+         break;
+      case RETRO_DEVICE_ANALOG:
+         in_type[port] = PSE_PAD_TYPE_ANALOGPAD;
+         break;
+      case RETRO_DEVICE_MOUSE:
+         in_type[port] = PSE_PAD_TYPE_MOUSE;
+         break;
+      case RETRO_DEVICE_LIGHTGUN:
+         in_type[port] = PSE_PAD_TYPE_GUN;
+         break;
+      case RETRO_DEVICE_NONE:
+      default:
+         in_type[port] = PSE_PAD_TYPE_NONE;
 	}
    
-   // Apply pad config changes.
-   // Only if PE2 fix in not active.
-   if (!Config.RCntFix)
+   /* Apply pad config changes,
+    * only required in old poll method */
+   if (use_old_poll_method)
       dfinput_activate();
 }
 
@@ -1233,6 +1235,17 @@ static void update_variables(bool in_flight)
          in_enable_vibration = 0;
       else if (strcmp(var.value, "enabled") == 0)
          in_enable_vibration = 1;
+   }
+
+   var.value = NULL;
+   var.key = "pcsx_rearmed_poll_method";
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || var.value)
+   {
+      if (strcmp(var.value, "default") == 0)
+         use_old_poll_method = true;
+      else
+         use_old_poll_method = false;
    }
 
    var.value = NULL;

@@ -142,7 +142,7 @@ endif
 OBJS += plugins/cdrcimg/cdrcimg.o
 
 # dfinput
-OBJS += plugins/dfinput/main.o plugins/dfinput/pad.o plugins/dfinput/guncon.o
+OBJS += plugins/dfinput/pad.o
 
 # frontend/gui
 OBJS += frontend/cspace.o
